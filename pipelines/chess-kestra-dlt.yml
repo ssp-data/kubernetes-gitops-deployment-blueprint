@@ -1,0 +1,29 @@
+id: dlt-chess-snowflake-demo
+namespace: demo
+
+tasks:
+  - id: sync_files
+    type: io.kestra.plugin.git.SyncNamespaceFiles
+    username: "${KESTRA_GIT_USERNAME}"
+    password: "{{ secret('GITHUB_ACCESS_TOKEN') }}"
+    url: https://github.com/sspaeti/kestra-dlt-snowflake/
+    branch: main
+    namespace: "{{ flow.namespace }}"
+    gitDirectory: _files
+    dryRun: true
+
+  - id: python
+    type: io.kestra.plugin.scripts.python.Commands
+    namespaceFiles:
+      enabled: true
+    taskRunner:
+      type: io.kestra.plugin.core.runner.Process    
+    env:
+      DESTINATION__SNOWFLAKE_HOST: "{{ secret('DESTINATION__SNOWFLAKE_HOST') }}"
+      DESTINATION__SNOWFLAKE_PASSWORD: "{{ secret('DESTINATION__SNOWFLAKE_PASSWORD') }}"
+    beforeCommands:
+      - pip install dlt[snowflake] 2> /dev/null
+      - export DESTINATION__SNOWFLAKE_HOST={{ secret('DESTINATION__SNOWFLAKE_HOST') }}
+      - export DESTINATION__SNOWFLAKE_PASSWORD={{ secret('DESTINATION__SNOWFLAKE_PASSWORD') }}
+    commands:
+      - python dlt/dlt-chess-snowflake.py

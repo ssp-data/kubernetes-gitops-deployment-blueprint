@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.16.xsd">
+
+    <changeSet id="1" author="data-team">
+        <comment>Create initial schema</comment>
+        <sql>
+            CREATE SCHEMA IF NOT EXISTS finance;
+            
+            CREATE TABLE finance.transactions (
+                id SERIAL PRIMARY KEY,
+                transaction_date DATE NOT NULL,
+                amount DECIMAL(18,2) NOT NULL,
+                description VARCHAR(255),
+                category VARCHAR(100),
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            );
+            
+            CREATE TABLE finance.accounts (
+                id SERIAL PRIMARY KEY,
+                account_number VARCHAR(50) UNIQUE NOT NULL,
+                account_name VARCHAR(100) NOT NULL,
+                account_type VARCHAR(50) NOT NULL,
+                balance DECIMAL(18,2) NOT NULL DEFAULT 0,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            );
+        </sql>
+        <rollback>
+            DROP TABLE IF EXISTS finance.transactions;
+            DROP TABLE IF EXISTS finance.accounts;
+            DROP SCHEMA IF EXISTS finance;
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

@@ -1,0 +1,212 @@
+name: Deploy with Flux
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'domains/**'
+      - 'infrastructure/**'
+      - 'platform/**'
+      - 'pipelines/**'
+      - 'clusters/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - test
+          - prod
+
+env:
+  REGISTRY: ghcr.io
+  REGISTRY_USERNAME: ${{ github.actor }}
+  REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+  KUBECONFIG: ${{ github.workspace }}/.kube/config
+
+jobs:
+  validate:
+    name: Validate Manifests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Kustomize
+        uses: fluxcd/pkg//actions/kustomize@main
+
+      - name: Validate Kustomize overlays
+        run: |
+          kustomize build clusters/dev | kubeval --ignore-missing-schemas
+          kustomize build infrastructure/overlays/dev | kubeval --ignore-missing-schemas
+          kustomize build platform/overlays/dev | kubeval --ignore-missing-schemas
+          kustomize build domains/finance/overlays/dev | kubeval --ignore-missing-schemas
+
+  build-docker-images:
+    name: Build and Push Images
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    strategy:
+      matrix:
+        image:
+          - path: pipelines/ingest/example-pipeline
+            name: data-platform/ingest-example
+          - path: pipelines/transform
+            name: data-platform/transform
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ env.REGISTRY_USERNAME }}
+          password: ${{ env.REGISTRY_PASSWORD }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ matrix.image.name }}
+          tags: |
+            type=sha,format=short
+            type=ref,event=branch
+
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          context: ${{ matrix.image.path }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  update-image-tags:
+    name: Update Image Tags
+    runs-on: ubuntu-latest
+    needs: build-docker-images
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Flux CLI
+        uses: fluxcd/flux2/action@main
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+      - name: Update image tags in manifests
+        run: |
+          # Example: Use the latest SHA tag to update image references
+          # This would typically be done by Flux's image automation controllers
+          # but we're doing it manually here as an example
+          REPO="${GITHUB_REPOSITORY}"
+          SHA="${GITHUB_SHA::7}"
+          
+          # Update transform image
+          sed -i "s|image: ${REGISTRY}/data-platform/transform:.*|image: ${REGISTRY}/data-platform/transform:sha-${SHA}|g" \
+            domains/finance/overlays/dev/dbt-jobs.yaml
+          
+          # Update ingest image
+          sed -i "s|image: ${REGISTRY}/data-platform/ingest-example:.*|image: ${REGISTRY}/data-platform/ingest-example:sha-${SHA}|g" \
+            domains/finance/overlays/dev/airflow-dags.yaml
+          
+          git add domains/finance/overlays/dev/dbt-jobs.yaml domains/finance/overlays/dev/airflow-dags.yaml
+          git commit -m "chore: update image tags to sha-${SHA}"
+          git push origin main
+
+  deploy:
+    name: Deploy with Flux
+    runs-on: ubuntu-latest
+    needs: [validate, update-image-tags]
+    if: github.event_name == 'workflow_dispatch'
+    environment:
+      name: ${{ github.event.inputs.environment || 'dev' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Flux CLI
+        uses: fluxcd/flux2/action@main
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.25.0'
+
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Get AKS credentials
+        env:
+          ENVIRONMENT: ${{ github.event.inputs.environment || 'dev' }}
+        run: |
+          az aks get-credentials \
+            --resource-group data-platform-$ENVIRONMENT-rg \
+            --name data-platform-$ENVIRONMENT \
+            --admin
+
+      - name: Verify cluster connection
+        run: kubectl cluster-info
+
+      - name: Check Flux installation
+        run: flux check --pre
+
+      - name: Bootstrap or update Flux (if needed)
+        env:
+          ENVIRONMENT: ${{ github.event.inputs.environment || 'dev' }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+        run: |
+          if ! flux check; then
+            flux bootstrap github \
+              --owner=${{ github.repository_owner }} \
+              --repository=$(echo ${{ github.repository }} | cut -d '/' -f 2) \
+              --branch=main \
+              --path=clusters/$ENVIRONMENT \
+              --personal \
+              --token-auth
+          else
+            flux reconcile source git flux-system
+            flux reconcile kustomization flux-system
+          fi
+
+      - name: Force reconciliation of all resources
+        run: |
+          echo "Reconciling all Flux resources..."
+          flux reconcile source git flux-system --reconcile
+          flux reconcile kustomization flux-system --reconcile
+          flux reconcile kustomization infrastructure --reconcile
+          flux reconcile kustomization platform --reconcile
+          flux reconcile kustomization domains --reconcile
+        
+      - name: Wait for deployment to complete
+        run: |
+          echo "Waiting for all kustomizations to be ready..."
+          flux get kustomizations --watch
+
+      - name: Verify deployment
+        run: |
+          echo "Verifying platform services..."
+          kubectl get pods -n platform
+          
+          echo "Verifying domain services..."
+          kubectl get pods -n finance

@@ -1,0 +1,42 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: airflow
+  namespace: data-platform
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: airflow
+      version: "8.6.1"
+      sourceRef:
+        kind: HelmRepository
+        name: apache-airflow
+        namespace: flux-system
+  values:
+    images:
+      airflow:
+        repository: apache/airflow
+        tag: 2.6.3-python3.9
+    
+    webserver:
+      defaultUser:
+        enabled: true
+        role: Admin
+      resources:
+        limits:
+          cpu: 1000m
+          memory: 1Gi
+        requests:
+          cpu: 500m
+          memory: 512Mi
+    
+    postgresql:
+      enabled: true
+      persistence:
+        size: 8Gi
+      
+    redis:
+      enabled: true
+      persistence:
+        size: 2Gi

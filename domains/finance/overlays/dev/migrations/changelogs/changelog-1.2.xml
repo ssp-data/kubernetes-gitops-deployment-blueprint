@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
+
+    <changeSet id="2025-04-28-01" author="deployment-concept">
+        <comment>Add analytics columns to transactions table</comment>
+        
+        <addColumn tableName="transactions">
+            <column name="processing_date" type="DATE">
+                <constraints nullable="true"/>
+            </column>
+            <column name="is_processed" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        
+        <createIndex indexName="idx_transactions_processing_date" tableName="transactions">
+            <column name="processing_date"/>
+        </createIndex>
+    </changeSet>
+    
+    <changeSet id="2025-04-28-02" author="deployment-concept">
+        <comment>Create aggregated transaction summary table</comment>
+        
+        <createTable tableName="transaction_summary">
+            <column name="id" type="INT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="report_date" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="customer_id" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="total_amount" type="DECIMAL(15,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="transaction_count" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_updated" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        
+        <createIndex indexName="idx_transaction_summary_date" tableName="transaction_summary">
+            <column name="report_date"/>
+        </createIndex>
+        
+        <createIndex indexName="idx_transaction_summary_customer" tableName="transaction_summary">
+            <column name="customer_id"/>
+        </createIndex>
+    </changeSet>
+    
+    <changeSet id="2025-04-28-03" author="deployment-concept">
+        <comment>Add stored procedure for transaction summary generation</comment>
+        
+        <createProcedure>
+            CREATE OR REPLACE PROCEDURE generate_transaction_summary(report_date DATE)
+            LANGUAGE plpgsql
+            AS $$
+            BEGIN
+                -- Delete existing summary for the date if it exists
+                DELETE FROM transaction_summary
+                WHERE report_date = $1;
+                
+                -- Insert new summary data
+                INSERT INTO transaction_summary
+                    (report_date, customer_id, total_amount, transaction_count, last_updated)
+                SELECT
+                    $1 as report_date,
+                    customer_id,
+                    SUM(amount) as total_amount,
+                    COUNT(*) as transaction_count,
+                    NOW() as last_updated
+                FROM
+                    transactions
+                WHERE
+                    transaction_date <= $1
+                    AND is_processed = true
+                GROUP BY
+                    customer_id;
+                    
+                -- Mark transactions as processed
+                UPDATE transactions
+                SET 
+                    is_processed = true,
+                    processing_date = $1
+                WHERE
+                    transaction_date <= $1
+                    AND is_processed = false;
+                    
+                COMMIT;
+            END;
+            $$;
+        </createProcedure>
+    </changeSet>
+</databaseChangeLog>

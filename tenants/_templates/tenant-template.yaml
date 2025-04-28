@@ -1,0 +1,41 @@
+apiVersion: tenants.example.com/v1
+kind: Tenant
+metadata:
+  name: ${TENANT_NAME}  # Will be replaced during tenant creation
+  namespace: tenant-system
+spec:
+  # Tenant owner information
+  owner:
+    name: ${OWNER_NAME}
+    email: ${OWNER_EMAIL}
+  
+  # Tenant resources
+  resources:
+    namespaces:
+      - name: ${TENANT_NAME}
+      - name: ${TENANT_NAME}-data
+    
+    # Resource limits for the tenant
+    quota:
+      limits:
+        cpu: ${CPU_LIMIT}
+        memory: ${MEMORY_LIMIT}
+        pods: ${PODS_LIMIT}
+      
+    # Network isolation
+    networkPolicy:
+      enabled: true
+      allowedNamespaces:
+        - kube-system
+        - monitoring
+        - data-platform
+        
+    # RBAC for tenant users
+    rbac:
+      groups:
+        - name: ${TENANT_NAME}-admins
+          role: admin
+        - name: ${TENANT_NAME}-users
+          role: edit
+        - name: ${TENANT_NAME}-viewers
+          role: view

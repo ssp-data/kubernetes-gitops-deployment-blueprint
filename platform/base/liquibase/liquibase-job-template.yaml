@@ -1,0 +1,40 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-migration-job
+  namespace: data-platform
+  annotations:
+    # This will be replaced with actual hash during deployment
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      containers:
+      - name: liquibase
+        image: liquibase/liquibase:4.16
+        args:
+          - --changelog-file=db/changelog/db.changelog-master.xml
+          - --url=jdbc:postgresql://postgresql:5432/dataplatform
+          - --username=$(DB_USER)
+          - --password=$(DB_PASSWORD)
+          - update
+        env:
+          - name: DB_USER
+            valueFrom:
+              secretKeyRef:
+                name: db-credentials
+                key: username
+          - name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: db-credentials
+                key: password
+        volumeMounts:
+          - name: migrations
+            mountPath: /liquibase/db
+      volumes:
+        - name: migrations
+          configMap:
+            name: db-migrations
+      restartPolicy: Never

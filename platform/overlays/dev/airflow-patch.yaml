@@ -1,0 +1,36 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: airflow
+  namespace: data-platform
+spec:
+  values:
+    # Dev-specific configuration
+    executor: KubernetesExecutor
+    workers:
+      replicas: 2
+    
+    # Add references to secret
+    webserver:
+      defaultUser:
+        username: admin
+        passwordSecretName: airflow-secrets
+        passwordSecretKey: admin-password
+      
+    # Connection to external services for dev
+    extraEnv:
+      - name: AIRFLOW_CONN_POSTGRES_DWH
+        valueFrom:
+          secretKeyRef:
+            name: airflow-secrets
+            key: postgres-dwh-connection
+            
+    # Reduced resource usage for dev environment
+    webserver:
+      resources:
+        limits:
+          cpu: 500m
+          memory: 512Mi
+        requests:
+          cpu: 200m
+          memory: 256Mi

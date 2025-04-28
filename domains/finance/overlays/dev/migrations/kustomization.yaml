@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: finance-domain
+configMapGenerator:
+  - name: finance-db-migrations
+    files:
+      - db.changelog-master.xml
+      - changelogs/changelog-1.0.xml
+      - changelogs/changelog-1.1.xml
+resources:
+  - migration-job.yaml

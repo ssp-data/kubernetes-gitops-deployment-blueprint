@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: finance-airflow-dags
+  namespace: finance-domain
+  labels:
+    app: airflow
+    component: dags
+data:
+  finance_etl.py: |
+    from airflow import DAG
+    from airflow.operators.bash import BashOperator
+    from datetime import datetime, timedelta
+
+    default_args = {
+      'owner': 'finance',
+      'depends_on_past': False,
+      'email_on_failure': True,
+      'email_on_retry': False,
+      'retries': 1,
+      'retry_delay': timedelta(minutes=5),
+    }
+
+    with DAG(
+      'finance_etl_daily',
+      default_args=default_args,
+      description='Daily Finance ETL',
+      schedule_interval='0 2 * * *',
+      start_date=datetime(2023, 1, 1),
+      catchup=False,
+    ) as dag:
+      
+      extract = BashOperator(
+        task_id='extract',
+        bash_command='echo "Extracting finance data"',
+      )
+      
+      transform = BashOperator(
+        task_id='transform',
+        bash_command='echo "Transforming finance data"',
+      )
+      
+      load = BashOperator(
+        task_id='load',
+        bash_command='echo "Loading finance data"',
+      )
+      
+      extract >> transform >> load

@@ -1,0 +1,39 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: finance-db-migration
+  namespace: finance-domain
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      containers:
+      - name: liquibase
+        image: liquibase/liquibase:4.16
+        args:
+          - --changelog-file=db.changelog-master.xml
+          - --url=jdbc:postgresql://finance-db:5432/finance
+          - --username=$(DB_USER)
+          - --password=$(DB_PASSWORD)
+          - update
+        env:
+          - name: DB_USER
+            valueFrom:
+              secretKeyRef:
+                name: finance-secrets
+                key: DB_USER
+          - name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: finance-secrets
+                key: DB_PASSWORD
+        volumeMounts:
+          - name: migrations
+            mountPath: /liquibase/
+      volumes:
+        - name: migrations
+          configMap:
+            name: finance-db-migrations
+      restartPolicy: Never

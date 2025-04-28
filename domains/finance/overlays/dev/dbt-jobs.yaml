@@ -1,0 +1,23 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: finance-dbt-daily
+  namespace: finance-domain
+spec:
+  schedule: "0 1 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: dbt
+            image: ghcr.io/example/finance-dbt:dev
+            command:
+            - /bin/bash
+            - -c
+            - |
+              cd /dbt && dbt run --profiles-dir=. --target=dev
+            envFrom:
+            - secretRef:
+                name: finance-secrets
+          restartPolicy: OnFailure

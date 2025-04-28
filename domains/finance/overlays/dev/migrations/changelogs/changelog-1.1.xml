@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.16.xsd">
+
+    <changeSet id="2" author="data-team">
+        <comment>Add indexes and foreign keys</comment>
+        <sql>
+            -- Add transaction type column
+            ALTER TABLE finance.transactions ADD COLUMN transaction_type VARCHAR(50);
+            
+            -- Create indexes for better performance
+            CREATE INDEX idx_transactions_date ON finance.transactions(transaction_date);
+            CREATE INDEX idx_transactions_category ON finance.transactions(category);
+            
+            -- Add foreign key to transactions table
+            ALTER TABLE finance.transactions ADD COLUMN account_id INTEGER;
+            ALTER TABLE finance.transactions ADD CONSTRAINT fk_transactions_account
+                FOREIGN KEY (account_id) REFERENCES finance.accounts(id);
+        </sql>
+        <rollback>
+            ALTER TABLE finance.transactions DROP CONSTRAINT IF EXISTS fk_transactions_account;
+            ALTER TABLE finance.transactions DROP COLUMN IF EXISTS account_id;
+            DROP INDEX IF EXISTS finance.idx_transactions_category;
+            DROP INDEX IF EXISTS finance.idx_transactions_date;
+            ALTER TABLE finance.transactions DROP COLUMN IF EXISTS transaction_type;
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
