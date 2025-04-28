@@ -16,14 +16,14 @@ Key principles are:
 8. **Release Management**: Consistent, repeatable deployment processes with clear versioning
 
 ## Recommended GitOps Stack
-There are several [[GitOps]] tools, most notable are [[ArgoCD]], [[Flux]] or [[Terraform]]. This example uses Flux as I have used that at my previous work, but ArgoCD is defenitely better if you like visual web interface. Flux is more basics.
+There are several [GitOps](https://www.ssp.sh/brian/gitops) tools, most notable are [ArgoCD](https://argo-cd.readthedocs.io/en/stable/0, [Flux](https://fluxcd.io/) or [Terraform](https://developer.hashicorp.com/terraform). This example uses Flux as I have used that at my previous work, but ArgoCD is defenitely better if you like visual web interface. Flux is more basics.
 
 - **GitOps Controller**: Flux for continuous delivery on Azure/AWS
 	- This means, changes are made through `git commits` to a deployment-repository, and Flux (or representative tool) will build a new release and deploy on dev/test/prod (depending where you made your changes)
 - **Package Management**: Helm Charts for application deployment
-	- Most OSS tools provide [[Helm Charts]] that can be used to deploy on Kubernetes or anywhere. Therefore these can be integrated in the deployment scripts.
-- **Secret Management**: [[PGP and SOPS - Kubernetes|SOPS]] with GitOps integration
-- **Database Migration**: [[Liquibase]] can handle database schema changes programaitcal. Meaning you define alter changes in a specific form (called `changesets`) and instead of manually creating the DDL statement from one release to the next, or from a major to the next major manually, liquid base can handle these. See example [[#Database Migration]]
+	- Most OSS tools provide [Helm Charts](https://helm.sh/) that can be used to deploy on Kubernetes or anywhere. Therefore these can be integrated in the deployment scripts.
+- **Secret Management**: [SOPS](https://fluxcd.io/flux/guides/mozilla-sops/) with GitOps integration
+- **Database Migration**: [Liquibase](https://www.ssp.sh/brain/liquibase/) can handle database schema changes programaitcal. Meaning you define alter changes in a specific form (called `changesets`) and instead of manually creating the DDL statement from one release to the next, or from a major to the next major manually, liquid base can handle these. See example [[#Database Migration]]
 - **CI/CD**: GitHub Actions or similar for validation and deployment
 	- On Azure the equivalent of GitHub Actions in Azure DevOps is [Azure Pipelines](https://azure.microsoft.com/en-us/products/devops/pipelines). 
 - **Infrastructure Management**: Platform-specific tools (Azure ARM, AWS CloudFormation) for resources that must be created before Kubernetes
@@ -100,11 +100,11 @@ In this example we use:
 #### Concrete example how we implemented Workspaces in HelloDATA-BE
 This is a real life example of how to integrate workspaces, a workspace different teams like ML Team, product analyst or data engineers might use for their pipelines or domain specific implementation.
 
-These are different from infrastructure and each time mostly use a different set of libraries, e.g. data scientist experiment with [[Seaborn]], and other libraries that have data scientist alorithms where as data engineers use pandas, numpy, etc to do tabluar data manipulations on data.
+These are different from infrastructure and each time mostly use a different set of libraries, e.g. data scientist experiment with Seaborn, and other libraries that have data scientist alorithms where as data engineers use pandas, numpy, etc to do tabluar data manipulations on data.
 
 Example of the structure of above HelloDATA-BE Example, where we have different tenants with the one portal and orchestration, but different data domains to segregate data (postgres) independently, and each data domain has different workspaces:
 
-![[workspaces.webp]]
+![workspaces](_images/workspaces.webp)
 
 See more on:
 - [Documentation for Workspaces](https://kanton-bern.github.io/hellodata-be/concepts/workspaces/)
@@ -141,7 +141,7 @@ Some best practices used for deployment and release management.
 - Store encrypted secrets in Git
 - Configure Flux to decrypt secrets automatically
 - Organize secrets hierarchically by environment and domain
-- Use external secret stores (Azure KeyVault, AWS Secrets Manager, [[Vault (HashiCorp)]]) for production
+- Use external secret stores (Azure KeyVault, AWS Secrets Manager, [Vault (HashiCorp)](https://developer.hashicorp.com/vault) for production
 
 ### Multi-tenancy
 - Implement namespace isolation between tenants
@@ -151,7 +151,7 @@ Some best practices used for deployment and release management.
 - Consider tenant-specific persistent volumes for data isolation
 
 ### Database Migration
-- Use mentioned [[Liquibase]] for database schema management
+- Use mentioned Liquibase for database schema management
 - Store migration scripts in version control
 - Implement CI/CD pipelines for database validation
 - Run migrations as Kubernetes Jobs before application deployment
@@ -160,8 +160,8 @@ Some best practices used for deployment and release management.
 A concrete example in  `domains/finance/overlays/dev/migrations/changelogs/` .
 #### Example
 There some links and examples below.
-- General [Liquibase.com](https://www.liquibase.com/ci-cd) - [[Liquibase]]
-	- ![[liquibase.webp]]
+- General [Liquibase.com](https://www.liquibase.com/ci-cd) - Liquibase
+![liquibase](_images/liquibase.webp)
 - Workflow: [Introduction to Liquibase](https://docs.liquibase.com/concepts/introduction-to-liquibase.html)
 	- Example of rename a column: [renameColumn](https://docs.liquibase.com/change-types/rename-column.html#sql_example)
 	- more examples on [Liquibase Open Source Workflows](https://docs.liquibase.com/workflows/liquibase-community/home.html)
@@ -170,7 +170,7 @@ There some links and examples below.
 	- Example of [renaming a Column](https://docs.liquibase.com/change-types/rename-column.html)
 ### Release Management
 
-- Implement [[Release Management|Semantic Versioning]] for all components
+- Implement [Semantic Versioning](https://semver.org/) for all components
 - Use tags to mark stable releases
 - Implement GitOps-based promotion between environments
 - Consider [blue/green or canary deployment strategies](https://octopus.com/devops/software-deployments/blue-green-vs-canary-deployments/)
