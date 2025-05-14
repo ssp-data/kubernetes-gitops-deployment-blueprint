@@ -1,5 +1,5 @@
-# Data Platform Deployment Best Practices
-This guide outlines best practices for deploying open data stacks on Kubernetes using GitOps principles, focusing on efficient patterns that work well with modern DevOps workflows.
+# Data Engineering GitOps Deployment Reference for Data Platforms
+This guide outlines **best practices** for deploying open data stacks on Kubernetes using GitOps principles, focusing on efficient patterns that work well with modern DevOps workflows.
 
 This provides a guideline and best practices for transitioning from traditional deployment methods to a DevOps workflow.
 
