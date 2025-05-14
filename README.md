@@ -16,6 +16,7 @@ Key principles are:
 8. **Release Management**: Consistent, repeatable deployment processes with clear versioning
 
 > 📝 **Also find the CI/CD implementation showcase**
+>
 > On [gitops-flux-pipeline-showcase/](https://github.com/ssp-data/gitops-flux-pipeline-showcase/) you'll find a working example of a GitOps infrastructure using Flux CD, Kestra workflows, and Liquibase migrations with complete CI/CD pipeline implementation. 
 
 ## Recommended GitOps Stack
