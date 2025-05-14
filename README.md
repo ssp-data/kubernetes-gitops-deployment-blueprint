@@ -3,9 +3,9 @@ This guide outlines best practices for deploying open data stacks on Kubernetes 
 
 This provides a guideline and best practices for transitioning from traditional deployment methods to a DevOps workflow.
 
-The examples shown and the accompanying git-repo [ssp-data/deployment-blueprint-gitops](https://github.com/ssp-data/deployment-blueprint-gitops) are not meant to work, but rather serve as a guideline to see what such a deployment can and should involve, depending on the depth of the deployment. 
+The examples shown and the accompanying folder structure in this repo are not meant to work out of the box, but rather serve as a guideline to see what such a deployment can and should involve, depending on the depth of the deployment. If you like a working copy with GitOps infrastructure using Flux CD, Kestra workflows, and Liquibase migrations with complete CI/CD pipeline implementation, checkout related repo [gitops-flux-pipeline-showcase](https://github.com/ssp-data/gitops-flux-pipeline-showcase/).
 
-Key principles are:
+This repo contains key principles such as:
 1. **Separation of Concerns**: Clear boundaries between infrastructure, platform services (if you want to go that deep), and applications such as business logic in data pipelines etc.
 2. **GitOps-Driven**: Everything defined as code, with Git as the single source of truth
 3. **Hierarchical Configuration**: Shared configurations at higher levels, specific overrides at lower levels
@@ -14,10 +14,6 @@ Key principles are:
 6. **Observability**: Built-in monitoring and alerting for all components
 7. **Multi-tenancy**: Isolation between different tenants/domains with clear access boundaries
 8. **Release Management**: Consistent, repeatable deployment processes with clear versioning
-
-> 📝 **Also find the CI/CD implementation showcase**
->
-> On [gitops-flux-pipeline-showcase](https://github.com/ssp-data/gitops-flux-pipeline-showcase/) you'll find a working example of a GitOps infrastructure using Flux CD, Kestra workflows, and Liquibase migrations with complete CI/CD pipeline implementation. 
 
 ## Recommended GitOps Stack
 There are several [GitOps](https://www.ssp.sh/brian/gitops) tools, most notable are [ArgoCD](https://argo-cd.readthedocs.io/en/stable/), [Flux](https://fluxcd.io/) or [Terraform](https://developer.hashicorp.com/terraform). This example uses Flux as I have used that at my previous work, but ArgoCD is definitely better if you like a visual web interface. Flux is more basic.
