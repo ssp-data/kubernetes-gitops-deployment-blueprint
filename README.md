@@ -15,6 +15,9 @@ Key principles are:
 7. **Multi-tenancy**: Isolation between different tenants/domains with clear access boundaries
 8. **Release Management**: Consistent, repeatable deployment processes with clear versioning
 
+> 📝 **Also find the CI/CD implementation showcase**
+> On [gitops-flux-pipeline-showcase/](https://github.com/ssp-data/gitops-flux-pipeline-showcase/) you'll find a working example of a GitOps infrastructure using Flux CD, Kestra workflows, and Liquibase migrations with complete CI/CD pipeline implementation. 
+
 ## Recommended GitOps Stack
 There are several [GitOps](https://www.ssp.sh/brian/gitops) tools, most notable are [ArgoCD](https://argo-cd.readthedocs.io/en/stable/), [Flux](https://fluxcd.io/) or [Terraform](https://developer.hashicorp.com/terraform). This example uses Flux as I have used that at my previous work, but ArgoCD is definitely better if you like a visual web interface. Flux is more basic.
 
