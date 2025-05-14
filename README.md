@@ -114,6 +114,12 @@ See more on:
 - [Documentation for Workspaces](https://kanton-bern.github.io/hellodata-be/concepts/workspaces/)
 - [GitHub starter workspace repo](https://github.com/bedag/hellodata-be-workspace-starter/tree/main)
 - [kanton-bern/hellodata-be](https://github.com/kanton-bern/hellodata-be): The Open-Source Enterprise Data Platform in a single Portal
+
+#### Code Locations
+Other technologies to implement workspaces straight forward are [Visual Studio Code Dev Containers](https://code.visualstudio.com/docs/devcontainers/containers). These allow with a single [devcontainer.json](https://www.ssp.sh/brain/devcontainers-devcontainer.json/#devcontainerjson) to start e full environment with all required libraries included. 
+
+[Devpod](https://www.ssp.sh/brain/devpod), [GitPod](https://www.gitpod.io/) or [GitHub Codespaces](https://github.com/features/codespaces). With these we can create workspaces that are decoupled from the infrastructre code.
+
 ## Deployment Workflow
 
 A typical deployment workflow includes:
